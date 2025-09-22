@@ -27,20 +27,30 @@ export default function Home() {
     operatingHoursPerYear: 4000,
   });
 
-  const update = (key: keyof CalculatorInputs) =>
-    (value: string) => {
-      const sanitized = value.replace(/,/g, ".").trim();
-      const parsed = Number(sanitized);
-      setInputs((prev) => ({ ...prev, [key]: isNaN(parsed) ? 0 : parsed }));
-    };
+  const [energyCostText, setEnergyCostText] = useState("0.18");
+  const [averageConsumptionText, setAverageConsumptionText] = useState("6.5");
+  const [robotsText, setRobotsText] = useState("2000");
+  const [hoursText, setHoursText] = useState("4000");
+
+  
 
   const results = useMemo(() => {
-    const baselineKwhPerYear =
-      inputs.numberOfRobots *
-      inputs.averageConsumptionKw *
-      inputs.operatingHoursPerYear;
+    const parsedEnergyCost = parseFloat(energyCostText.replace(/,/g, "."));
+    const parsedAvgConsumption = parseFloat(averageConsumptionText.replace(/,/g, "."));
+    const parsedRobots = parseFloat(robotsText.replace(/,/g, "."));
+    const parsedHours = parseFloat(hoursText.replace(/,/g, "."));
 
-    const baselineCost = baselineKwhPerYear * inputs.energyCostPerKwh;
+    const energyCostPerKwh = isNaN(parsedEnergyCost) ? 0 : parsedEnergyCost;
+    const averageConsumptionKw = isNaN(parsedAvgConsumption) ? 0 : parsedAvgConsumption;
+    const numberOfRobots = isNaN(parsedRobots) ? 0 : parsedRobots;
+    const operatingHoursPerYear = isNaN(parsedHours) ? 0 : parsedHours;
+
+    const baselineKwhPerYear =
+      numberOfRobots *
+      averageConsumptionKw *
+      operatingHoursPerYear;
+
+    const baselineCost = baselineKwhPerYear * energyCostPerKwh;
     const baselineMwhPerYear = baselineKwhPerYear / 1000;
 
     const improvements = [5, 10, 15, 20, 25, 30];
@@ -68,7 +78,7 @@ export default function Home() {
       baselineCost,
       scenarios,
     };
-  }, [inputs]);
+  }, [energyCostText, averageConsumptionText, robotsText, hoursText]);
 
   return (
     <div className="min-h-dvh p-6 md:p-10">
@@ -88,46 +98,52 @@ export default function Home() {
               <div className="space-y-4">
                 <Field
                   label="Energy cost (€/kWh)"
-                  value={String(inputs.energyCostPerKwh)}
+                  value={energyCostText}
                   min={0}
                   step="0.01"
                   type="text"
-                  onChange={update("energyCostPerKwh")}
+                  onChange={setEnergyCostText}
                 />
                 <Field
                   label="Number of robots"
-                  value={String(inputs.numberOfRobots)}
+                  value={robotsText}
                   min={0}
                   step="1"
-                  onChange={update("numberOfRobots")}
+                  type="text"
+                  onChange={setRobotsText}
                 />
                 <Field
                   label="Average consumption per robot (kW)"
-                  value={String(inputs.averageConsumptionKw)}
+                  value={averageConsumptionText}
                   min={0}
                   step="0.1"
                   type="text"
-                  onChange={update("averageConsumptionKw")}
+                  onChange={setAverageConsumptionText}
                 />
                 <Field
                   label="Operating hours per year"
-                  value={String(inputs.operatingHoursPerYear)}
+                  value={hoursText}
                   min={0}
                   step="1"
-                  onChange={update("operatingHoursPerYear")}
+                  type="text"
+                  onChange={setHoursText}
                 />
 
                 <div className="pt-2">
                   <button
                     type="button"
-                    onClick={() =>
+                    onClick={() => {
                       setInputs({
                         energyCostPerKwh: 0.18,
                         numberOfRobots: 2000,
                         averageConsumptionKw: 6.5,
                         operatingHoursPerYear: 4000,
-                      })
-                    }
+                      });
+                      setEnergyCostText("0.18");
+                      setAverageConsumptionText("6.5");
+                      setRobotsText("2000");
+                      setHoursText("4000");
+                    }}
                     className="w-full md:w-auto inline-flex items-center justify-center rounded-md border border-black/15 dark:border-white/20 px-4 py-2 text-sm font-medium hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
                   >
                     Reset to examples
