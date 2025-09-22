@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
 // removed obsolete type
@@ -22,43 +22,7 @@ export default function Home() {
   const [robotsText, setRobotsText] = useState("2000");
   const [hoursText, setHoursText] = useState("4000");
 
-  const router = useRouter();
-  const pathname = usePathname();
-  const searchParams = useSearchParams();
-
-  // Hydrate from query params on mount
-  useEffect(() => {
-    const ec = searchParams.get("ec");
-    const avg = searchParams.get("avg");
-    const r = searchParams.get("r");
-    const h = searchParams.get("h");
-    if (ec !== null) setEnergyCostText(ec);
-    if (avg !== null) setAverageConsumptionText(avg);
-    if (r !== null) setRobotsText(r);
-    if (h !== null) setHoursText(h);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  // Sync state to query params without navigation
-  useEffect(() => {
-    const nextParams = new URLSearchParams(searchParams.toString());
-    const setOrDelete = (key: string, value: string) => {
-      const v = value.trim();
-      if (v) nextParams.set(key, v);
-      else nextParams.delete(key);
-    };
-    setOrDelete("ec", energyCostText);
-    setOrDelete("avg", averageConsumptionText);
-    setOrDelete("r", robotsText);
-    setOrDelete("h", hoursText);
-
-    const current = searchParams.toString();
-    const next = nextParams.toString();
-    if (current === next) return;
-
-    const url = next ? `${pathname}?${next}` : pathname;
-    router.replace(url, { scroll: false });
-  }, [energyCostText, averageConsumptionText, robotsText, hoursText, pathname, router, searchParams]);
+  
 
   
 
@@ -111,6 +75,18 @@ export default function Home() {
   return (
     <div className="min-h-dvh p-6 md:p-10">
       <div className="mx-auto max-w-5xl">
+        <Suspense fallback={null}>
+          <UrlSync
+            energyCostText={energyCostText}
+            averageConsumptionText={averageConsumptionText}
+            robotsText={robotsText}
+            hoursText={hoursText}
+            setEnergyCostText={setEnergyCostText}
+            setAverageConsumptionText={setAverageConsumptionText}
+            setRobotsText={setRobotsText}
+            setHoursText={setHoursText}
+          />
+        </Suspense>
         <header className="mb-8 md:mb-12">
           <h1 className="text-2xl md:text-3xl font-semibold tracking-tight">Energy Savings Calculator</h1>
           <p className="text-sm md:text-base text-black/60 dark:text-white/60 mt-1">
@@ -207,6 +183,64 @@ export default function Home() {
       </div>
     </div>
   );
+}
+
+function UrlSync({
+  energyCostText,
+  averageConsumptionText,
+  robotsText,
+  hoursText,
+  setEnergyCostText,
+  setAverageConsumptionText,
+  setRobotsText,
+  setHoursText,
+}: {
+  energyCostText: string;
+  averageConsumptionText: string;
+  robotsText: string;
+  hoursText: string;
+  setEnergyCostText: (v: string) => void;
+  setAverageConsumptionText: (v: string) => void;
+  setRobotsText: (v: string) => void;
+  setHoursText: (v: string) => void;
+}) {
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+
+  useEffect(() => {
+    const ec = searchParams.get("ec");
+    const avg = searchParams.get("avg");
+    const r = searchParams.get("r");
+    const h = searchParams.get("h");
+    if (ec !== null) setEnergyCostText(ec);
+    if (avg !== null) setAverageConsumptionText(avg);
+    if (r !== null) setRobotsText(r);
+    if (h !== null) setHoursText(h);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    const nextParams = new URLSearchParams(searchParams.toString());
+    const setOrDelete = (key: string, value: string) => {
+      const v = value.trim();
+      if (v) nextParams.set(key, v);
+      else nextParams.delete(key);
+    };
+    setOrDelete("ec", energyCostText);
+    setOrDelete("avg", averageConsumptionText);
+    setOrDelete("r", robotsText);
+    setOrDelete("h", hoursText);
+
+    const current = searchParams.toString();
+    const next = nextParams.toString();
+    if (current === next) return;
+
+    const url = next ? `${pathname}?${next}` : pathname;
+    router.replace(url, { scroll: false });
+  }, [energyCostText, averageConsumptionText, robotsText, hoursText, pathname, router, searchParams]);
+
+  return null;
 }
 
 function Field({
