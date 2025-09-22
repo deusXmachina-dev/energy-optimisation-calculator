@@ -1,6 +1,7 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
 // removed obsolete type
 
@@ -20,6 +21,44 @@ export default function Home() {
   const [averageConsumptionText, setAverageConsumptionText] = useState("6.5");
   const [robotsText, setRobotsText] = useState("2000");
   const [hoursText, setHoursText] = useState("4000");
+
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+
+  // Hydrate from query params on mount
+  useEffect(() => {
+    const ec = searchParams.get("ec");
+    const avg = searchParams.get("avg");
+    const r = searchParams.get("r");
+    const h = searchParams.get("h");
+    if (ec !== null) setEnergyCostText(ec);
+    if (avg !== null) setAverageConsumptionText(avg);
+    if (r !== null) setRobotsText(r);
+    if (h !== null) setHoursText(h);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Sync state to query params without navigation
+  useEffect(() => {
+    const nextParams = new URLSearchParams(searchParams.toString());
+    const setOrDelete = (key: string, value: string) => {
+      const v = value.trim();
+      if (v) nextParams.set(key, v);
+      else nextParams.delete(key);
+    };
+    setOrDelete("ec", energyCostText);
+    setOrDelete("avg", averageConsumptionText);
+    setOrDelete("r", robotsText);
+    setOrDelete("h", hoursText);
+
+    const current = searchParams.toString();
+    const next = nextParams.toString();
+    if (current === next) return;
+
+    const url = next ? `${pathname}?${next}` : pathname;
+    router.replace(url, { scroll: false });
+  }, [energyCostText, averageConsumptionText, robotsText, hoursText, pathname, router, searchParams]);
 
   
 
@@ -117,21 +156,6 @@ export default function Home() {
                   type="text"
                   onChange={setHoursText}
                 />
-
-                <div className="pt-2">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setEnergyCostText("0.18");
-                      setAverageConsumptionText("6.5");
-                      setRobotsText("2000");
-                      setHoursText("4000");
-                    }}
-                    className="w-full md:w-auto inline-flex items-center justify-center rounded-md border border-black/15 dark:border-white/20 px-4 py-2 text-sm font-medium hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
-                  >
-                    Reset to examples
-                  </button>
-                </div>
               </div>
             </div>
           </div>
