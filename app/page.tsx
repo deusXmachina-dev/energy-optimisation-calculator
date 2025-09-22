@@ -2,12 +2,7 @@
 
 import { useMemo, useState } from "react";
 
-type CalculatorInputs = {
-  energyCostPerKwh: number;
-  numberOfRobots: number;
-  averageConsumptionKw: number;
-  operatingHoursPerYear: number;
-};
+// removed obsolete type
 
 const currency = new Intl.NumberFormat(undefined, {
   style: "currency",
@@ -20,12 +15,6 @@ const mwhFmt = new Intl.NumberFormat(undefined, {
 });
 
 export default function Home() {
-  const [inputs, setInputs] = useState<CalculatorInputs>({
-    energyCostPerKwh: 0.18,
-    numberOfRobots: 2000,
-    averageConsumptionKw: 6.5,
-    operatingHoursPerYear: 4000,
-  });
 
   const [energyCostText, setEnergyCostText] = useState("0.18");
   const [averageConsumptionText, setAverageConsumptionText] = useState("6.5");
@@ -133,12 +122,6 @@ export default function Home() {
                   <button
                     type="button"
                     onClick={() => {
-                      setInputs({
-                        energyCostPerKwh: 0.18,
-                        numberOfRobots: 2000,
-                        averageConsumptionKw: 6.5,
-                        operatingHoursPerYear: 4000,
-                      });
                       setEnergyCostText("0.18");
                       setAverageConsumptionText("6.5");
                       setRobotsText("2000");
