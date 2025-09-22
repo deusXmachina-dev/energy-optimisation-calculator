@@ -19,8 +19,9 @@ export default function Home() {
 
   const [energyCostText, setEnergyCostText] = useState("0.18");
   const [averageConsumptionText, setAverageConsumptionText] = useState("6.5");
-  const [robotsText, setRobotsText] = useState("2000");
+  const [robotsText, setRobotsText] = useState("3000");
   const [hoursText, setHoursText] = useState("4000");
+  const [optimizableText, setOptimizableText] = useState("70");
 
   
 
@@ -31,11 +32,13 @@ export default function Home() {
     const parsedAvgConsumption = parseFloat(averageConsumptionText.replace(/,/g, "."));
     const parsedRobots = parseFloat(robotsText.replace(/,/g, "."));
     const parsedHours = parseFloat(hoursText.replace(/,/g, "."));
+    const parsedOptimizable = parseFloat(optimizableText.replace(/,/g, "."));
 
     const energyCostPerKwh = isNaN(parsedEnergyCost) ? 0 : parsedEnergyCost;
     const averageConsumptionKw = isNaN(parsedAvgConsumption) ? 0 : parsedAvgConsumption;
     const numberOfRobots = isNaN(parsedRobots) ? 0 : parsedRobots;
     const operatingHoursPerYear = isNaN(parsedHours) ? 0 : parsedHours;
+    const optimizableRatio = Math.min(1, Math.max(0, (isNaN(parsedOptimizable) ? 100 : parsedOptimizable) / 100));
 
     const baselineKwhPerYear =
       numberOfRobots *
@@ -50,7 +53,8 @@ export default function Home() {
       const factor = Math.max(0, 1 - pct / 100);
       const newKwhPerYear = baselineKwhPerYear * factor;
       const newCost = baselineCost * factor;
-      const annualSavings = baselineCost - newCost;
+      const annualSavings = (baselineCost - newCost) * optimizableRatio;
+      const energySavingsKwh = (baselineKwhPerYear - newKwhPerYear) * optimizableRatio;
       const savingsPercent = baselineCost > 0 ? (annualSavings / baselineCost) * 100 : 0;
       return {
         pct,
@@ -58,6 +62,7 @@ export default function Home() {
         newMwhPerYear: newKwhPerYear / 1000,
         newCost,
         annualSavings,
+        energySavingsMwh: energySavingsKwh / 1000,
         savingsPercent,
         highlight: pct === 15,
         assumed: pct === 15,
@@ -70,7 +75,7 @@ export default function Home() {
       baselineCost,
       scenarios,
     };
-  }, [energyCostText, averageConsumptionText, robotsText, hoursText]);
+  }, [energyCostText, averageConsumptionText, robotsText, hoursText, optimizableText]);
 
   return (
     <div className="min-h-dvh p-6 md:p-10">
@@ -81,10 +86,12 @@ export default function Home() {
             averageConsumptionText={averageConsumptionText}
             robotsText={robotsText}
             hoursText={hoursText}
+            optimizableText={optimizableText}
             setEnergyCostText={setEnergyCostText}
             setAverageConsumptionText={setAverageConsumptionText}
             setRobotsText={setRobotsText}
             setHoursText={setHoursText}
+            setOptimizableText={setOptimizableText}
           />
         </Suspense>
         <header className="mb-8 md:mb-12">
@@ -116,6 +123,22 @@ export default function Home() {
                   type="text"
                   onChange={setRobotsText}
                 />
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-xs uppercase tracking-wide text-black/60 dark:text-white/60">Optimizable robots (%)</span>
+                    <span className="text-xs font-medium">{(!isNaN(Number(optimizableText)) ? Number(optimizableText) : 0)}%</span>
+                  </div>
+                  <input
+                    type="range"
+                    min={0}
+                    max={100}
+                    step={1}
+                    value={!isNaN(Number(optimizableText)) ? Number(optimizableText) : 0}
+                    onChange={(e) => setOptimizableText(e.target.value)}
+                    className="w-full accent-black dark:accent-white"
+                    aria-label="Optimizable robots percentage"
+                  />
+                </div>
                 <Field
                   label="Average consumption per robot (kW)"
                   value={averageConsumptionText}
@@ -155,7 +178,7 @@ export default function Home() {
                   <thead>
                     <tr className="text-left text-black/60 dark:text-white/60">
                       <th className="py-2 pr-4 font-normal">Average improvement</th>
-                      <th className="py-2 pr-4 font-normal">Energy (MWh/yr)</th>
+                      <th className="py-2 pr-4 font-normal">Energy savings (MWh/yr)</th>
                       <th className="py-2 text-right font-normal">Savings (€/yr)</th>
                     </tr>
                   </thead>
@@ -164,7 +187,7 @@ export default function Home() {
                       <ScenarioRow
                         key={s.pct}
                         improvement={`${s.pct}%`}
-                        energy={mwhFmt.format(s.newMwhPerYear)}
+                        energy={mwhFmt.format(s.energySavingsMwh)}
                         savings={currency.format(s.annualSavings)}
                         highlight={s.highlight}
                         assumed={s.assumed}
@@ -190,19 +213,23 @@ function UrlSync({
   averageConsumptionText,
   robotsText,
   hoursText,
+  optimizableText,
   setEnergyCostText,
   setAverageConsumptionText,
   setRobotsText,
   setHoursText,
+  setOptimizableText,
 }: {
   energyCostText: string;
   averageConsumptionText: string;
   robotsText: string;
   hoursText: string;
+  optimizableText: string;
   setEnergyCostText: (v: string) => void;
   setAverageConsumptionText: (v: string) => void;
   setRobotsText: (v: string) => void;
   setHoursText: (v: string) => void;
+  setOptimizableText: (v: string) => void;
 }) {
   const router = useRouter();
   const pathname = usePathname();
@@ -213,10 +240,12 @@ function UrlSync({
     const avg = searchParams.get("avg");
     const r = searchParams.get("r");
     const h = searchParams.get("h");
+    const oz = searchParams.get("oz");
     if (ec !== null) setEnergyCostText(ec);
     if (avg !== null) setAverageConsumptionText(avg);
     if (r !== null) setRobotsText(r);
     if (h !== null) setHoursText(h);
+    if (oz !== null) setOptimizableText(oz);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -231,6 +260,7 @@ function UrlSync({
     setOrDelete("avg", averageConsumptionText);
     setOrDelete("r", robotsText);
     setOrDelete("h", hoursText);
+    setOrDelete("oz", optimizableText);
 
     const current = searchParams.toString();
     const next = nextParams.toString();
@@ -238,7 +268,7 @@ function UrlSync({
 
     const url = next ? `${pathname}?${next}` : pathname;
     router.replace(url, { scroll: false });
-  }, [energyCostText, averageConsumptionText, robotsText, hoursText, pathname, router, searchParams]);
+  }, [energyCostText, averageConsumptionText, robotsText, hoursText, optimizableText, pathname, router, searchParams]);
 
   return null;
 }
