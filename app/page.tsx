@@ -6,9 +6,7 @@ type CalculatorInputs = {
   energyCostPerKwh: number;
   numberOfRobots: number;
   averageConsumptionKw: number;
-  operatingHoursPerDay: number;
-  operatingDaysPerYear: number;
-  efficiencyImprovementPercent: number;
+  operatingHoursPerYear: number;
 };
 
 const currency = new Intl.NumberFormat(undefined, {
@@ -17,23 +15,22 @@ const currency = new Intl.NumberFormat(undefined, {
   maximumFractionDigits: 0,
 });
 
-const numberFmt = new Intl.NumberFormat(undefined, {
-  maximumFractionDigits: 0,
+const mwhFmt = new Intl.NumberFormat(undefined, {
+  maximumFractionDigits: 1,
 });
 
 export default function Home() {
   const [inputs, setInputs] = useState<CalculatorInputs>({
     energyCostPerKwh: 0.18,
-    numberOfRobots: 20,
-    averageConsumptionKw: 3.5,
-    operatingHoursPerDay: 16,
-    operatingDaysPerYear: 250,
-    efficiencyImprovementPercent: 15,
+    numberOfRobots: 2000,
+    averageConsumptionKw: 6.5,
+    operatingHoursPerYear: 4000,
   });
 
   const update = (key: keyof CalculatorInputs) =>
     (value: string) => {
-      const parsed = Number(value);
+      const sanitized = value.replace(/,/g, ".").trim();
+      const parsed = Number(sanitized);
       setInputs((prev) => ({ ...prev, [key]: isNaN(parsed) ? 0 : parsed }));
     };
 
@@ -41,24 +38,35 @@ export default function Home() {
     const baselineKwhPerYear =
       inputs.numberOfRobots *
       inputs.averageConsumptionKw *
-      inputs.operatingHoursPerDay *
-      inputs.operatingDaysPerYear;
+      inputs.operatingHoursPerYear;
 
     const baselineCost = baselineKwhPerYear * inputs.energyCostPerKwh;
+    const baselineMwhPerYear = baselineKwhPerYear / 1000;
 
-    const factor = Math.max(0, 1 - inputs.efficiencyImprovementPercent / 100);
-    const newKwhPerYear = baselineKwhPerYear * factor;
-    const newCost = baselineCost * factor;
-    const annualSavings = baselineCost - newCost;
-    const savingsPercent = baselineCost > 0 ? (annualSavings / baselineCost) * 100 : 0;
+    const improvements = [5, 10, 15, 20, 25, 30];
+    const scenarios = improvements.map((pct) => {
+      const factor = Math.max(0, 1 - pct / 100);
+      const newKwhPerYear = baselineKwhPerYear * factor;
+      const newCost = baselineCost * factor;
+      const annualSavings = baselineCost - newCost;
+      const savingsPercent = baselineCost > 0 ? (annualSavings / baselineCost) * 100 : 0;
+      return {
+        pct,
+        newKwhPerYear,
+        newMwhPerYear: newKwhPerYear / 1000,
+        newCost,
+        annualSavings,
+        savingsPercent,
+        highlight: pct === 15,
+        assumed: pct === 15,
+      };
+    });
 
     return {
       baselineKwhPerYear,
+      baselineMwhPerYear,
       baselineCost,
-      newKwhPerYear,
-      newCost,
-      annualSavings,
-      savingsPercent,
+      scenarios,
     };
   }, [inputs]);
 
@@ -83,6 +91,7 @@ export default function Home() {
                   value={String(inputs.energyCostPerKwh)}
                   min={0}
                   step="0.01"
+                  type="text"
                   onChange={update("energyCostPerKwh")}
                 />
                 <Field
@@ -97,29 +106,15 @@ export default function Home() {
                   value={String(inputs.averageConsumptionKw)}
                   min={0}
                   step="0.1"
+                  type="text"
                   onChange={update("averageConsumptionKw")}
                 />
                 <Field
-                  label="Operating hours per day"
-                  value={String(inputs.operatingHoursPerDay)}
+                  label="Operating hours per year"
+                  value={String(inputs.operatingHoursPerYear)}
                   min={0}
                   step="1"
-                  onChange={update("operatingHoursPerDay")}
-                />
-                <Field
-                  label="Operating days per year"
-                  value={String(inputs.operatingDaysPerYear)}
-                  min={0}
-                  step="1"
-                  onChange={update("operatingDaysPerYear")}
-                />
-                <Field
-                  label="Efficiency improvement (%)"
-                  value={String(inputs.efficiencyImprovementPercent)}
-                  min={0}
-                  max={100}
-                  step="1"
-                  onChange={update("efficiencyImprovementPercent")}
+                  onChange={update("operatingHoursPerYear")}
                 />
 
                 <div className="pt-2">
@@ -128,11 +123,9 @@ export default function Home() {
                     onClick={() =>
                       setInputs({
                         energyCostPerKwh: 0.18,
-                        numberOfRobots: 20,
-                        averageConsumptionKw: 3.5,
-                        operatingHoursPerDay: 16,
-                        operatingDaysPerYear: 250,
-                        efficiencyImprovementPercent: 15,
+                        numberOfRobots: 2000,
+                        averageConsumptionKw: 6.5,
+                        operatingHoursPerYear: 4000,
                       })
                     }
                     className="w-full md:w-auto inline-flex items-center justify-center rounded-md border border-black/15 dark:border-white/20 px-4 py-2 text-sm font-medium hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
@@ -148,15 +141,36 @@ export default function Home() {
             <div className="rounded-xl border border-black/10 dark:border-white/15 p-5 md:p-6 bg-white/50 dark:bg-black/30 backdrop-blur">
               <h2 className="text-base font-medium mb-4">Results</h2>
               <div className="overflow-x-auto">
+                <div className="mb-4">
+                  <table className="w-full text-sm md:text-base">
+                    <tbody className="divide-y divide-black/10 dark:divide-white/10">
+                      <Row label="Baseline energy (MWh/year)" value={mwhFmt.format(results.baselineMwhPerYear)} />
+                      <Row label="Baseline cost (€/year)" value={currency.format(results.baselineCost)} />
+                    </tbody>
+                  </table>
+                </div>
+                <div className="mb-3 rounded-md border border-black/10 dark:border-white/15 bg-black/[.03] dark:bg-white/[.04] px-3 py-2 text-xs text-black/70 dark:text-white/70">
+                  We assume an average improvement of <span className="font-semibold">15%</span> based on typical deployments.
+                </div>
                 <table className="w-full text-sm md:text-base">
+                  <thead>
+                    <tr className="text-left text-black/60 dark:text-white/60">
+                      <th className="py-2 pr-4 font-normal">Average improvement</th>
+                      <th className="py-2 pr-4 font-normal">Energy (MWh/yr)</th>
+                      <th className="py-2 text-right font-normal">Savings (€/yr)</th>
+                    </tr>
+                  </thead>
                   <tbody className="divide-y divide-black/10 dark:divide-white/10">
-                    <Row label="Robots" value={numberFmt.format(inputs.numberOfRobots)} />
-                    <Row label="Baseline energy (kWh/year)" value={numberFmt.format(results.baselineKwhPerYear)} />
-                    <Row label="Baseline cost (€/year)" value={currency.format(results.baselineCost)} />
-                    <Row label="New energy (kWh/year)" value={numberFmt.format(results.newKwhPerYear)} />
-                    <Row label="New cost (€/year)" value={currency.format(results.newCost)} />
-                    <Row label="Annual savings" value={currency.format(results.annualSavings)} emphasis />
-                    <Row label="Savings (%)" value={`${results.savingsPercent.toFixed(1)}%`} />
+                    {results.scenarios.map((s) => (
+                      <ScenarioRow
+                        key={s.pct}
+                        improvement={`${s.pct}%`}
+                        energy={mwhFmt.format(s.newMwhPerYear)}
+                        savings={currency.format(s.annualSavings)}
+                        highlight={s.highlight}
+                        assumed={s.assumed}
+                      />
+                    ))}
                   </tbody>
                 </table>
               </div>
@@ -179,6 +193,7 @@ function Field({
   step,
   min,
   max,
+  type = "number",
 }: {
   label: string;
   value: string;
@@ -186,12 +201,13 @@ function Field({
   step?: string;
   min?: number;
   max?: number;
+  type?: "text" | "number";
 }) {
   return (
     <label className="block">
       <span className="block text-xs uppercase tracking-wide text-black/60 dark:text-white/60 mb-1">{label}</span>
       <input
-        type="number"
+        type={type}
         inputMode="decimal"
         value={value}
         onChange={(e) => onChange(e.target.value)}
@@ -209,6 +225,33 @@ function Row({ label, value, emphasis }: { label: string; value: string; emphasi
     <tr>
       <td className="py-3 pr-4 align-top text-black/70 dark:text-white/70">{label}</td>
       <td className={`py-3 text-right font-medium ${emphasis ? "text-green-700 dark:text-green-400" : ""}`}>{value}</td>
+    </tr>
+  );
+}
+
+function ScenarioRow({
+  improvement,
+  energy,
+  savings,
+  highlight,
+  assumed,
+}: {
+  improvement: string;
+  energy: string;
+  savings: string;
+  highlight?: boolean;
+  assumed?: boolean;
+}) {
+  return (
+    <tr className={highlight ? "bg-black/[.035] dark:bg-white/[.06]" : ""}>
+      <td className={`py-3 pr-4 ${highlight ? "font-medium" : ""}`}>
+        <span>{improvement}</span>
+        {assumed ? (
+          <span className="ml-2 inline-flex items-center rounded-sm border border-black/15 dark:border-white/20 px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-black/70 dark:text-white/70">Assumed</span>
+        ) : null}
+      </td>
+      <td className="py-3 pr-4">{energy}</td>
+      <td className={`py-3 text-right font-semibold ${highlight ? "text-green-700 dark:text-green-400" : ""}`}>{savings}</td>
     </tr>
   );
 }
