@@ -218,11 +218,11 @@ export default function Home() {
               <div className="overflow-x-auto -mx-1 px-1">
                 <table className="w-full text-sm">
                   <thead>
-                    <tr className="border-b border-black/10 dark:border-white/10">
-                      <th className="pb-2 md:pb-2.5 pr-2 md:pr-3 text-left font-medium text-[10px] md:text-[11px] uppercase tracking-wider text-black/60 dark:text-white/60">Improvement</th>
-                      <th className="pb-2 md:pb-2.5 pr-2 md:pr-3 text-left md:text-right font-medium text-[10px] md:text-[11px] uppercase tracking-wider text-black/60 dark:text-white/60">Savings</th>
-                      <th className="pb-2 md:pb-2.5 pr-2 md:pr-3 text-left font-medium text-[10px] md:text-[11px] uppercase tracking-wider text-black/60 dark:text-white/60">Energy (MWh)</th>
-                      <th className="pb-2 md:pb-2.5 text-left font-medium text-[10px] md:text-[11px] uppercase tracking-wider text-black/60 dark:text-white/60">CO₂ (t)</th>
+                    <tr className="border-b border-black/10 dark:border-white/10 flex md:table-row">
+                      <th className="pb-2 md:pb-2.5 pr-2 md:pr-3 text-left font-medium text-[10px] md:text-[11px] uppercase tracking-wider text-black/60 dark:text-white/60 order-1">Improvement</th>
+                      <th className="pb-2 md:pb-2.5 pr-2 md:pr-3 text-left font-medium text-[10px] md:text-[11px] uppercase tracking-wider text-black/60 dark:text-white/60 order-3 md:order-2">Energy (MWh)</th>
+                      <th className="pb-2 md:pb-2.5 pr-2 md:pr-3 text-left font-medium text-[10px] md:text-[11px] uppercase tracking-wider text-black/60 dark:text-white/60 order-4 md:order-3">CO₂ (t)</th>
+                      <th className="pb-2 md:pb-2.5 text-left md:text-right font-medium text-[10px] md:text-[11px] uppercase tracking-wider text-black/60 dark:text-white/60 order-2 md:order-4">Savings</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -384,8 +384,8 @@ function ScenarioRow({
   assumed?: boolean;
 }) {
   return (
-    <tr className={`border-b border-black/5 dark:border-white/5 transition-colors ${highlight ? "bg-green-50 dark:bg-green-950/20" : "hover:bg-black/[.02] dark:hover:bg-white/[.02]"}`}>
-      <td className={`py-3 md:py-4 pr-2 md:pr-3 ${highlight ? "font-semibold" : "font-medium"}`}>
+    <tr className={`border-b border-black/5 dark:border-white/5 transition-colors flex md:table-row ${highlight ? "bg-green-50 dark:bg-green-950/20" : "hover:bg-black/[.02] dark:hover:bg-white/[.02]"}`}>
+      <td className={`py-3 md:py-4 pr-2 md:pr-3 order-1 ${highlight ? "font-semibold" : "font-medium"}`}>
         <div className="flex flex-col md:flex-row md:items-center gap-1 md:gap-2">
           <span className={`text-sm md:text-base whitespace-nowrap ${highlight ? "text-green-700 dark:text-green-400" : ""}`}>{improvement}</span>
           {assumed ? (
@@ -393,9 +393,9 @@ function ScenarioRow({
           ) : null}
         </div>
       </td>
-      <td className={`py-3 md:py-4 pr-2 md:pr-3 text-left md:text-right text-base md:text-lg font-bold tabular-nums ${highlight ? "text-green-700 dark:text-green-400" : ""}`}>{lifetimeSavings}</td>
-      <td className={`py-3 md:py-4 pr-2 md:pr-3 text-xs md:text-sm ${highlight ? "font-medium" : ""}`}>{energy}</td>
-      <td className={`py-3 md:py-4 text-xs md:text-sm ${highlight ? "font-medium" : ""}`}>{co2Savings}</td>
+      <td className={`py-3 md:py-4 pr-2 md:pr-3 text-xs md:text-sm order-3 md:order-2 ${highlight ? "font-medium" : ""}`}>{energy}</td>
+      <td className={`py-3 md:py-4 pr-2 md:pr-3 text-xs md:text-sm order-4 md:order-3 ${highlight ? "font-medium" : ""}`}>{co2Savings}</td>
+      <td className={`py-3 md:py-4 text-left md:text-right text-base md:text-lg font-bold tabular-nums order-2 md:order-4 ${highlight ? "text-green-700 dark:text-green-400" : ""}`}>{lifetimeSavings}</td>
     </tr>
   );
 }
