@@ -190,14 +190,19 @@ export default function Home() {
                       type="text"
                       onChange={setHoursText}
                     />
-                    <Field
-                      label="Investment horizon (yr)"
-                      value={lifetimeText}
-                      min={0}
-                      step="1"
-                      type="text"
-                      onChange={setLifetimeText}
-                    />
+                    <div>
+                      <Field
+                        label="Investment horizon (yr)"
+                        value={lifetimeText}
+                        min={0}
+                        step="1"
+                        type="text"
+                        onChange={setLifetimeText}
+                      />
+                      <p className="mt-1 text-[10px] text-black/50 dark:text-white/50">
+                        Duration the solution will be deployed (e.g., production line lifetime)
+                      </p>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -211,13 +216,13 @@ export default function Home() {
                 <p className="text-[11px] text-black/50 dark:text-white/50">Total over {results.lifetimeYears}-year period</p>
               </div>
               <div className="overflow-x-auto -mx-1 px-1">
-                <table className="w-full text-sm min-w-[500px]">
+                <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b border-black/10 dark:border-white/10">
                       <th className="pb-2 md:pb-2.5 pr-2 md:pr-3 text-left font-medium text-[10px] md:text-[11px] uppercase tracking-wider text-black/60 dark:text-white/60">Improvement</th>
+                      <th className="pb-2 md:pb-2.5 pr-2 md:pr-3 text-left md:text-right font-medium text-[10px] md:text-[11px] uppercase tracking-wider text-black/60 dark:text-white/60">Savings</th>
                       <th className="pb-2 md:pb-2.5 pr-2 md:pr-3 text-left font-medium text-[10px] md:text-[11px] uppercase tracking-wider text-black/60 dark:text-white/60">Energy (MWh)</th>
-                      <th className="pb-2 md:pb-2.5 pr-2 md:pr-3 text-left font-medium text-[10px] md:text-[11px] uppercase tracking-wider text-black/60 dark:text-white/60">CO₂ (t)</th>
-                      <th className="pb-2 md:pb-2.5 text-right font-medium text-[10px] md:text-[11px] uppercase tracking-wider text-black/60 dark:text-white/60">Savings</th>
+                      <th className="pb-2 md:pb-2.5 text-left font-medium text-[10px] md:text-[11px] uppercase tracking-wider text-black/60 dark:text-white/60">CO₂ (t)</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -388,9 +393,9 @@ function ScenarioRow({
           ) : null}
         </div>
       </td>
+      <td className={`py-3 md:py-4 pr-2 md:pr-3 text-left md:text-right text-base md:text-lg font-bold tabular-nums ${highlight ? "text-green-700 dark:text-green-400" : ""}`}>{lifetimeSavings}</td>
       <td className={`py-3 md:py-4 pr-2 md:pr-3 text-xs md:text-sm ${highlight ? "font-medium" : ""}`}>{energy}</td>
-      <td className={`py-3 md:py-4 pr-2 md:pr-3 text-xs md:text-sm ${highlight ? "font-medium" : ""}`}>{co2Savings}</td>
-      <td className={`py-3 md:py-4 text-right text-base md:text-lg font-bold tabular-nums ${highlight ? "text-green-700 dark:text-green-400" : ""}`}>{lifetimeSavings}</td>
+      <td className={`py-3 md:py-4 text-xs md:text-sm ${highlight ? "font-medium" : ""}`}>{co2Savings}</td>
     </tr>
   );
 }
