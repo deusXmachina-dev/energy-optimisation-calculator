@@ -123,7 +123,7 @@ export default function Home() {
         <header className="mb-5 md:mb-6">
           <h1 className="text-2xl md:text-3xl font-bold tracking-tight mb-1">Energy Savings Calculator</h1>
           <p className="text-xs md:text-sm text-black/60 dark:text-white/60">
-            Estimate total energy and cost savings for your robot fleet
+            We are a small team of software engineers developing a solution for seamless optimization of robot fleets online or right in your digital twin.
           </p>
         </header>
 
@@ -240,6 +240,14 @@ export default function Home() {
                 <div className="mt-5 pt-4 border-t border-black/10 dark:border-white/10 text-[11px] text-black/60 dark:text-white/60">
                   Power consumption estimates based on typical manufacturer values. Actual values may vary by model and operating conditions.
                 </div>
+              </div>
+
+              <div className="mt-6 md:mt-8 pt-6 md:pt-8 border-t border-black/10 dark:border-white/10 text-center">
+                <h2 className="text-xl md:text-2xl font-bold mb-2">Sounds Interesting?</h2>
+                <p className="text-sm md:text-base text-black/60 dark:text-white/60 mb-5 md:mb-6">
+                  Let&apos;s discuss how we can help optimize your robot fleet and achieve these savings.
+                </p>
+                <ContactButton results={results} />
               </div>
             </div>
           </div>
@@ -392,5 +400,40 @@ function ScenarioRow({
       <td className={`py-3 md:py-4 pr-2 md:pr-3 text-sm md:text-base tabular-nums ${assumed ? "font-bold" : ""} ${highlight ? "text-green-700 dark:text-green-400" : ""}`}>{co2Savings}</td>
       <td className={`py-3 md:py-4 pr-2 md:pr-3 text-right text-sm md:text-base tabular-nums ${assumed ? "font-bold" : ""} ${highlight ? "text-green-700 dark:text-green-400" : ""}`}>{lifetimeSavings}</td>
     </tr>
+  );
+}
+
+function ContactButton({ results }: { results: { baselineMwhPerYear: number; baselineCost: number; baselineLifetimeCost: number; lifetimeYears: number; scenarios: Array<{ pct: number; lifetimeSavings: number; co2SavingsTons: number; totalEnergySavingsMwh: number }> } }) {
+  const typicalScenario = results.scenarios.find(s => s.pct === 20);
+  
+  const emailSubject = "Energy Optimization Inquiry";
+  const emailBody = `Hi,
+
+I've used your Energy Savings Calculator and would like to learn more about your robot fleet optimization solution.
+
+Here are my projected savings:
+
+Baseline Energy Consumption: ${mwhFmt.format(results.baselineMwhPerYear)} MWh/year
+Baseline Annual Cost: ${currency.format(results.baselineCost)}
+Investment Horizon: ${results.lifetimeYears} years
+
+Projected Savings (typical 20% improvement):
+• Lifetime Cost Savings: ${typicalScenario ? currency.format(typicalScenario.lifetimeSavings) : 'N/A'}
+• Total Energy Saved: ${typicalScenario ? mwhFmt.format(typicalScenario.totalEnergySavingsMwh) : 'N/A'} MWh
+• CO₂ Avoided: ${typicalScenario ? co2Fmt.format(typicalScenario.co2SavingsTons) : 'N/A'} tCO₂e
+
+I would like to discuss how your solution can help optimize my robot fleet.
+
+Best regards`;
+
+  const mailtoLink = `mailto:hello@deusxmachina.dev?subject=${encodeURIComponent(emailSubject)}&body=${encodeURIComponent(emailBody)}`;
+
+  return (
+    <a
+      href={mailtoLink}
+      className="inline-flex items-center justify-center px-4 md:px-5 py-2 md:py-2.5 rounded-lg bg-black dark:bg-white text-white dark:text-black text-sm md:text-base font-semibold hover:bg-black/90 dark:hover:bg-white/90 transition-colors whitespace-nowrap shadow-sm"
+    >
+      Let&apos;s get in touch
+    </a>
   );
 }
