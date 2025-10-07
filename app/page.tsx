@@ -5,13 +5,13 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
 // removed obsolete type
 
-const currency = new Intl.NumberFormat(undefined, {
+const currency = new Intl.NumberFormat("cs-CZ", {
   style: "currency",
   currency: "EUR",
   maximumFractionDigits: 0,
 });
 
-const mwhFmt = new Intl.NumberFormat(undefined, {
+const mwhFmt = new Intl.NumberFormat("cs-CZ", {
   maximumFractionDigits: 1,
 });
 
