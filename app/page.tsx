@@ -210,19 +210,18 @@ export default function Home() {
           </div>
 
           <div>
-            <div className="rounded-xl border border-black/10 dark:border-white/10 p-4 md:p-5 bg-white dark:bg-black shadow-sm">
-              <div className="pb-3 border-b border-black/10 dark:border-white/10 mb-4">
+            <div className="rounded-xl border border-black/10 dark:border-white/10 p-4 md:p-6 bg-white dark:bg-black shadow-sm">
+              <div className="pb-3 border-b border-black/10 dark:border-white/10 mb-5">
                 <h3 className="text-base font-semibold mb-0.5">Projected Savings</h3>
                 <p className="text-[11px] text-black/50 dark:text-white/50">Total over {results.lifetimeYears}-year period</p>
               </div>
-              <div className="overflow-x-auto -mx-1 px-1">
+              <div className="overflow-x-auto mb-1">
                 <table className="w-full text-sm">
                   <thead>
-                    <tr className="border-b border-black/10 dark:border-white/10 flex md:table-row">
-                      <th className="pb-2 md:pb-2.5 pr-2 md:pr-3 text-left font-medium text-[10px] md:text-[11px] uppercase tracking-wider text-black/60 dark:text-white/60 order-1">Improvement</th>
-                      <th className="pb-2 md:pb-2.5 pr-2 md:pr-3 text-left font-medium text-[10px] md:text-[11px] uppercase tracking-wider text-black/60 dark:text-white/60 order-3 md:order-2">Energy (MWh)</th>
-                      <th className="pb-2 md:pb-2.5 pr-2 md:pr-3 text-left font-medium text-[10px] md:text-[11px] uppercase tracking-wider text-black/60 dark:text-white/60 order-4 md:order-3">CO₂ (t)</th>
-                      <th className="pb-2 md:pb-2.5 text-left md:text-right font-medium text-[10px] md:text-[11px] uppercase tracking-wider text-black/60 dark:text-white/60 order-2 md:order-4">Savings</th>
+                    <tr className="border-b border-black/10 dark:border-white/10">
+                      <th className="pb-2 md:pb-2.5 pl-2 md:pl-3 pr-2 md:pr-3 text-left font-medium text-[10px] md:text-[11px] uppercase tracking-wider text-black/60 dark:text-white/60">Energy Savings</th>
+                      <th className="pb-2 md:pb-2.5 pr-2 md:pr-3 text-left font-semibold text-[10px] md:text-[11px] uppercase tracking-wider text-black/70 dark:text-white/70">CO₂ Avoided (tCO₂e)</th>
+                      <th className="pb-2 md:pb-2.5 pr-2 md:pr-3 text-right font-semibold text-[10px] md:text-[11px] uppercase tracking-wider text-black/70 dark:text-white/70">Cost Savings</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -230,7 +229,6 @@ export default function Home() {
                       <ScenarioRow
                         key={s.pct}
                         improvement={`${s.pct}%`}
-                        energy={mwhFmt.format(s.totalEnergySavingsMwh)}
                         co2Savings={co2Fmt.format(s.co2SavingsTons)}
                         lifetimeSavings={currency.format(s.lifetimeSavings)}
                         highlight={s.highlight}
@@ -239,7 +237,7 @@ export default function Home() {
                     ))}
                   </tbody>
                 </table>
-                <div className="mt-4 pt-3 border-t border-black/10 dark:border-white/10 text-[11px] text-black/60 dark:text-white/60">
+                <div className="mt-5 pt-4 border-t border-black/10 dark:border-white/10 text-[11px] text-black/60 dark:text-white/60">
                   Power consumption estimates based on typical manufacturer values. Actual values may vary by model and operating conditions.
                 </div>
               </div>
@@ -370,32 +368,29 @@ function Field({
 
 function ScenarioRow({
   improvement,
-  energy,
   co2Savings,
   lifetimeSavings,
   highlight,
   assumed,
 }: {
   improvement: string;
-  energy: string;
   co2Savings: string;
   lifetimeSavings: string;
   highlight?: boolean;
   assumed?: boolean;
 }) {
   return (
-    <tr className={`border-b border-black/5 dark:border-white/5 transition-colors flex md:table-row ${highlight ? "bg-green-50 dark:bg-green-950/20" : "hover:bg-black/[.02] dark:hover:bg-white/[.02]"}`}>
-      <td className={`py-3 md:py-4 pr-2 md:pr-3 order-1 ${highlight ? "font-semibold" : "font-medium"}`}>
-        <div className="flex flex-col md:flex-row md:items-center gap-1 md:gap-2">
+    <tr className={`border-b border-black/5 dark:border-white/5 transition-colors ${highlight ? "bg-green-50 dark:bg-green-950/20" : "hover:bg-black/[.02] dark:hover:bg-white/[.02]"}`}>
+      <td className={`py-3 md:py-4 pl-2 md:pl-3 pr-2 md:pr-3 ${assumed ? "font-bold" : ""}`}>
+        <div className="flex items-center gap-2">
           <span className={`text-sm md:text-base whitespace-nowrap ${highlight ? "text-green-700 dark:text-green-400" : ""}`}>{improvement}</span>
           {assumed ? (
-            <span className="inline-flex w-fit items-center rounded-full bg-green-100 dark:bg-green-900/30 border border-green-300 dark:border-green-700 px-1.5 md:px-2 py-0.5 text-[9px] md:text-[10px] font-semibold uppercase tracking-wide text-green-700 dark:text-green-400">Typical</span>
+            <span className="inline-flex items-center rounded-full bg-green-100 dark:bg-green-900/30 border border-green-300 dark:border-green-700 px-1.5 md:px-2 py-0.5 text-[9px] md:text-[10px] font-semibold uppercase tracking-wide text-green-700 dark:text-green-400">Typical</span>
           ) : null}
         </div>
       </td>
-      <td className={`py-3 md:py-4 pr-2 md:pr-3 text-xs md:text-sm order-3 md:order-2 ${highlight ? "font-medium" : ""}`}>{energy}</td>
-      <td className={`py-3 md:py-4 pr-2 md:pr-3 text-xs md:text-sm order-4 md:order-3 ${highlight ? "font-medium" : ""}`}>{co2Savings}</td>
-      <td className={`py-3 md:py-4 text-left md:text-right text-base md:text-lg font-bold tabular-nums order-2 md:order-4 ${highlight ? "text-green-700 dark:text-green-400" : ""}`}>{lifetimeSavings}</td>
+      <td className={`py-3 md:py-4 pr-2 md:pr-3 text-sm md:text-base tabular-nums ${assumed ? "font-bold" : ""} ${highlight ? "text-green-700 dark:text-green-400" : ""}`}>{co2Savings}</td>
+      <td className={`py-3 md:py-4 pr-2 md:pr-3 text-right text-sm md:text-base tabular-nums ${assumed ? "font-bold" : ""} ${highlight ? "text-green-700 dark:text-green-400" : ""}`}>{lifetimeSavings}</td>
     </tr>
   );
 }
