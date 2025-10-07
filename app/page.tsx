@@ -15,13 +15,19 @@ const mwhFmt = new Intl.NumberFormat("cs-CZ", {
   maximumFractionDigits: 1,
 });
 
+const co2Fmt = new Intl.NumberFormat("cs-CZ", {
+  maximumFractionDigits: 1,
+});
+
 export default function Home() {
 
+  const [smallRobotsText, setSmallRobotsText] = useState("50");
+  const [mediumRobotsText, setMediumRobotsText] = useState("20");
+  const [largeRobotsText, setLargeRobotsText] = useState("10");
+  const [xlargeRobotsText, setXlargeRobotsText] = useState("2");
   const [energyCostText, setEnergyCostText] = useState("0.18");
-  const [averageConsumptionText, setAverageConsumptionText] = useState("6.5");
-  const [robotsText, setRobotsText] = useState("3000");
-  const [hoursText, setHoursText] = useState("4000");
-  const [optimizableText, setOptimizableText] = useState("70");
+  const [hoursText, setHoursText] = useState("5000");
+  const [lifetimeText, setLifetimeText] = useState("5");
 
   
 
@@ -29,32 +35,43 @@ export default function Home() {
 
   const results = useMemo(() => {
     const parsedEnergyCost = parseFloat(energyCostText.replace(/,/g, "."));
-    const parsedAvgConsumption = parseFloat(averageConsumptionText.replace(/,/g, "."));
-    const parsedRobots = parseFloat(robotsText.replace(/,/g, "."));
+    const parsedSmallRobots = parseFloat(smallRobotsText.replace(/,/g, "."));
+    const parsedMediumRobots = parseFloat(mediumRobotsText.replace(/,/g, "."));
+    const parsedLargeRobots = parseFloat(largeRobotsText.replace(/,/g, "."));
+    const parsedXlargeRobots = parseFloat(xlargeRobotsText.replace(/,/g, "."));
     const parsedHours = parseFloat(hoursText.replace(/,/g, "."));
-    const parsedOptimizable = parseFloat(optimizableText.replace(/,/g, "."));
+    const parsedLifetime = parseFloat(lifetimeText.replace(/,/g, "."));
 
     const energyCostPerKwh = isNaN(parsedEnergyCost) ? 0 : parsedEnergyCost;
-    const averageConsumptionKw = isNaN(parsedAvgConsumption) ? 0 : parsedAvgConsumption;
-    const numberOfRobots = isNaN(parsedRobots) ? 0 : parsedRobots;
+    const smallRobots = isNaN(parsedSmallRobots) ? 0 : parsedSmallRobots;
+    const mediumRobots = isNaN(parsedMediumRobots) ? 0 : parsedMediumRobots;
+    const largeRobots = isNaN(parsedLargeRobots) ? 0 : parsedLargeRobots;
+    const xlargeRobots = isNaN(parsedXlargeRobots) ? 0 : parsedXlargeRobots;
     const operatingHoursPerYear = isNaN(parsedHours) ? 0 : parsedHours;
-    const optimizableRatio = Math.min(1, Math.max(0, (isNaN(parsedOptimizable) ? 100 : parsedOptimizable) / 100));
+    const lifetimeYears = isNaN(parsedLifetime) ? 0 : parsedLifetime;
 
-    const baselineKwhPerYear =
-      numberOfRobots *
-      averageConsumptionKw *
-      operatingHoursPerYear;
+    // Assumed power consumption per robot type (kW)
+    const totalConsumptionKw = 
+      smallRobots * 1.2 + 
+      mediumRobots * 1.5 + 
+      largeRobots * 6 + 
+      xlargeRobots * 10;
 
+    const baselineKwhPerYear = totalConsumptionKw * operatingHoursPerYear;
     const baselineCost = baselineKwhPerYear * energyCostPerKwh;
     const baselineMwhPerYear = baselineKwhPerYear / 1000;
+    const baselineLifetimeCost = baselineCost * lifetimeYears;
 
-    const improvements = [5, 10, 15, 20, 25, 30];
+    const improvements = [15, 20, 25];
     const scenarios = improvements.map((pct) => {
       const factor = Math.max(0, 1 - pct / 100);
       const newKwhPerYear = baselineKwhPerYear * factor;
       const newCost = baselineCost * factor;
-      const annualSavings = (baselineCost - newCost) * optimizableRatio;
-      const energySavingsKwh = (baselineKwhPerYear - newKwhPerYear) * optimizableRatio;
+      const annualSavings = baselineCost - newCost;
+      const lifetimeSavings = annualSavings * lifetimeYears;
+      const energySavingsKwh = baselineKwhPerYear - newKwhPerYear;
+      const totalEnergySavingsMwh = (energySavingsKwh / 1000) * lifetimeYears;
+      const co2SavingsTons = totalEnergySavingsMwh * 0.4; // tCO₂e/MWh
       const savingsPercent = baselineCost > 0 ? (annualSavings / baselineCost) * 100 : 0;
       return {
         pct,
@@ -62,10 +79,13 @@ export default function Home() {
         newMwhPerYear: newKwhPerYear / 1000,
         newCost,
         annualSavings,
+        lifetimeSavings,
         energySavingsMwh: energySavingsKwh / 1000,
+        totalEnergySavingsMwh,
+        co2SavingsTons,
         savingsPercent,
-        highlight: pct === 15,
-        assumed: pct === 15,
+        highlight: pct === 20,
+        assumed: pct === 20,
       };
     });
 
@@ -73,179 +93,213 @@ export default function Home() {
       baselineKwhPerYear,
       baselineMwhPerYear,
       baselineCost,
+      baselineLifetimeCost,
+      lifetimeYears,
       scenarios,
     };
-  }, [energyCostText, averageConsumptionText, robotsText, hoursText, optimizableText]);
+  }, [energyCostText, smallRobotsText, mediumRobotsText, largeRobotsText, xlargeRobotsText, hoursText, lifetimeText]);
 
   return (
-    <div className="min-h-dvh p-6 md:p-10">
-      <div className="mx-auto max-w-5xl">
+    <div className="min-h-dvh p-4 md:p-6 bg-gradient-to-br from-black/[.02] to-black/[.06] dark:from-white/[.02] dark:to-white/[.06]">
+      <div className="mx-auto max-w-7xl">
         <Suspense fallback={null}>
           <UrlSync
+            smallRobotsText={smallRobotsText}
+            mediumRobotsText={mediumRobotsText}
+            largeRobotsText={largeRobotsText}
+            xlargeRobotsText={xlargeRobotsText}
             energyCostText={energyCostText}
-            averageConsumptionText={averageConsumptionText}
-            robotsText={robotsText}
             hoursText={hoursText}
-            optimizableText={optimizableText}
+            lifetimeText={lifetimeText}
+            setSmallRobotsText={setSmallRobotsText}
+            setMediumRobotsText={setMediumRobotsText}
+            setLargeRobotsText={setLargeRobotsText}
+            setXlargeRobotsText={setXlargeRobotsText}
             setEnergyCostText={setEnergyCostText}
-            setAverageConsumptionText={setAverageConsumptionText}
-            setRobotsText={setRobotsText}
             setHoursText={setHoursText}
-            setOptimizableText={setOptimizableText}
+            setLifetimeText={setLifetimeText}
           />
         </Suspense>
-        <header className="mb-8 md:mb-12">
-          <h1 className="text-2xl md:text-3xl font-semibold tracking-tight">Energy Savings Calculator</h1>
-          <p className="text-sm md:text-base text-black/60 dark:text-white/60 mt-1">
-            Estimate annual energy and cost savings for robot cells in automotive production.
+        <header className="mb-5 md:mb-6">
+          <h1 className="text-2xl md:text-3xl font-bold tracking-tight mb-1">Energy Savings Calculator</h1>
+          <p className="text-xs md:text-sm text-black/60 dark:text-white/60">
+            Estimate total energy and cost savings for your robot fleet
           </p>
         </header>
 
-        <section className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <section className="grid grid-cols-1 lg:grid-cols-[400px_1fr] gap-4 lg:gap-5">
           <div>
-            <div className="rounded-xl border border-black/10 dark:border-white/15 p-5 md:p-6 bg-white/50 dark:bg-black/30 backdrop-blur">
-              <h2 className="text-base font-medium mb-4">Inputs</h2>
-
+            <div className="rounded-xl border border-black/10 dark:border-white/10 p-4 md:p-5 bg-white dark:bg-black shadow-sm">
               <div className="space-y-4">
-                <Field
-                  label="Energy cost (€/kWh)"
-                  value={energyCostText}
-                  min={0}
-                  step="0.01"
-                  type="text"
-                  onChange={setEnergyCostText}
-                />
-                <Field
-                  label="Number of robots"
-                  value={robotsText}
-                  min={0}
-                  step="1"
-                  type="text"
-                  onChange={setRobotsText}
-                />
-                <div>
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="text-xs uppercase tracking-wide text-black/60 dark:text-white/60">Optimizable robots (%)</span>
-                    <span className="text-xs font-medium">{(!isNaN(Number(optimizableText)) ? Number(optimizableText) : 0)}%</span>
-                  </div>
-                  <input
-                    type="range"
+                <div className="pb-3 border-b border-black/10 dark:border-white/10">
+                  <h3 className="text-base font-semibold mb-0.5">Robot Fleet</h3>
+                  <p className="text-[11px] text-black/50 dark:text-white/50">Robots by payload</p>
+                </div>
+                <div className="grid grid-cols-2 gap-2.5">
+                  <Field
+                    label="Small (< 16 kg)"
+                    value={smallRobotsText}
                     min={0}
-                    max={100}
-                    step={1}
-                    value={!isNaN(Number(optimizableText)) ? Number(optimizableText) : 0}
-                    onChange={(e) => setOptimizableText(e.target.value)}
-                    className="w-full accent-black dark:accent-white"
-                    aria-label="Optimizable robots percentage"
+                    step="1"
+                    type="text"
+                    onChange={setSmallRobotsText}
+                  />
+                  <Field
+                    label="Medium (< 60 kg)"
+                    value={mediumRobotsText}
+                    min={0}
+                    step="1"
+                    type="text"
+                    onChange={setMediumRobotsText}
+                  />
+                  <Field
+                    label="Large (< 225 kg)"
+                    value={largeRobotsText}
+                    min={0}
+                    step="1"
+                    type="text"
+                    onChange={setLargeRobotsText}
+                  />
+                  <Field
+                    label="XLarge (> 225 kg)"
+                    value={xlargeRobotsText}
+                    min={0}
+                    step="1"
+                    type="text"
+                    onChange={setXlargeRobotsText}
                   />
                 </div>
-                <Field
-                  label="Average consumption per robot (kW)"
-                  value={averageConsumptionText}
-                  min={0}
-                  step="0.1"
-                  type="text"
-                  onChange={setAverageConsumptionText}
-                />
-                <Field
-                  label="Operating hours per year"
-                  value={hoursText}
-                  min={0}
-                  step="1"
-                  type="text"
-                  onChange={setHoursText}
-                />
+
+                <div className="pt-3 border-t border-black/10 dark:border-white/10">
+                  <h3 className="text-base font-semibold mb-0.5">Parameters</h3>
+                  <p className="text-[11px] text-black/50 dark:text-white/50 mb-3">Operating conditions</p>
+                  <div className="space-y-2.5">
+                    <Field
+                      label="Energy cost (€/kWh)"
+                      value={energyCostText}
+                      min={0}
+                      step="0.01"
+                      type="text"
+                      onChange={setEnergyCostText}
+                    />
+                    <Field
+                      label="Operating hours/year"
+                      value={hoursText}
+                      min={0}
+                      step="1"
+                      type="text"
+                      onChange={setHoursText}
+                    />
+                    <Field
+                      label="Investment horizon (yr)"
+                      value={lifetimeText}
+                      min={0}
+                      step="1"
+                      type="text"
+                      onChange={setLifetimeText}
+                    />
+                  </div>
+                </div>
               </div>
             </div>
           </div>
 
           <div>
-            <div className="rounded-xl border border-black/10 dark:border-white/15 p-5 md:p-6 bg-white/50 dark:bg-black/30 backdrop-blur">
-              <h2 className="text-base font-medium mb-4">Results</h2>
-              <div className="overflow-x-auto">
-                <div className="mb-4">
-                  <table className="w-full text-sm md:text-base">
-                    <tbody className="divide-y divide-black/10 dark:divide-white/10">
-                      <Row label="Baseline energy (MWh/year)" value={mwhFmt.format(results.baselineMwhPerYear)} />
-                      <Row label="Baseline cost (€/year)" value={currency.format(results.baselineCost)} />
-                    </tbody>
-                  </table>
-                </div>
-                <div className="mb-3 rounded-md border border-black/10 dark:border-white/15 bg-black/[.03] dark:bg-white/[.04] px-3 py-2 text-xs text-black/70 dark:text-white/70">
-                  We assume an average improvement of <span className="font-semibold">15%</span> based on typical deployments.
-                </div>
-                <table className="w-full text-sm md:text-base">
+            <div className="rounded-xl border border-black/10 dark:border-white/10 p-4 md:p-5 bg-white dark:bg-black shadow-sm">
+              <div className="pb-3 border-b border-black/10 dark:border-white/10 mb-4">
+                <h3 className="text-base font-semibold mb-0.5">Projected Savings</h3>
+                <p className="text-[11px] text-black/50 dark:text-white/50">Total over {results.lifetimeYears}-year period</p>
+              </div>
+              <div className="overflow-x-auto -mx-1 px-1">
+                <table className="w-full text-sm min-w-[500px]">
                   <thead>
-                    <tr className="text-left text-black/60 dark:text-white/60">
-                      <th className="py-2 pr-4 font-normal">Average improvement</th>
-                      <th className="py-2 pr-4 font-normal">Energy savings (MWh/yr)</th>
-                      <th className="py-2 text-right font-normal">Savings (€/yr)</th>
+                    <tr className="border-b border-black/10 dark:border-white/10">
+                      <th className="pb-2 md:pb-2.5 pr-2 md:pr-3 text-left font-medium text-[10px] md:text-[11px] uppercase tracking-wider text-black/60 dark:text-white/60">Improvement</th>
+                      <th className="pb-2 md:pb-2.5 pr-2 md:pr-3 text-left font-medium text-[10px] md:text-[11px] uppercase tracking-wider text-black/60 dark:text-white/60">Energy (MWh)</th>
+                      <th className="pb-2 md:pb-2.5 pr-2 md:pr-3 text-left font-medium text-[10px] md:text-[11px] uppercase tracking-wider text-black/60 dark:text-white/60">CO₂ (t)</th>
+                      <th className="pb-2 md:pb-2.5 text-right font-medium text-[10px] md:text-[11px] uppercase tracking-wider text-black/60 dark:text-white/60">Savings</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-black/10 dark:divide-white/10">
+                  <tbody>
                     {results.scenarios.map((s) => (
                       <ScenarioRow
                         key={s.pct}
                         improvement={`${s.pct}%`}
-                        energy={mwhFmt.format(s.energySavingsMwh)}
-                        savings={currency.format(s.annualSavings)}
+                        energy={mwhFmt.format(s.totalEnergySavingsMwh)}
+                        co2Savings={co2Fmt.format(s.co2SavingsTons)}
+                        lifetimeSavings={currency.format(s.lifetimeSavings)}
                         highlight={s.highlight}
                         assumed={s.assumed}
                       />
                     ))}
                   </tbody>
                 </table>
+                <div className="mt-4 pt-3 border-t border-black/10 dark:border-white/10 text-[11px] text-black/60 dark:text-white/60">
+                  Power consumption estimates based on typical manufacturer values. Actual values may vary by model and operating conditions.
+                </div>
               </div>
             </div>
           </div>
         </section>
 
-        <footer className="mt-10 text-xs text-black/50 dark:text-white/50">
+        <footer className="mt-6 md:mt-8 text-[10px] md:text-xs text-black/50 dark:text-white/50">
           Disclaimer: This is an estimate. Actual savings depend on duty cycles and load.
-      </footer>
+        </footer>
       </div>
     </div>
   );
 }
 
 function UrlSync({
+  smallRobotsText,
+  mediumRobotsText,
+  largeRobotsText,
+  xlargeRobotsText,
   energyCostText,
-  averageConsumptionText,
-  robotsText,
   hoursText,
-  optimizableText,
+  lifetimeText,
+  setSmallRobotsText,
+  setMediumRobotsText,
+  setLargeRobotsText,
+  setXlargeRobotsText,
   setEnergyCostText,
-  setAverageConsumptionText,
-  setRobotsText,
   setHoursText,
-  setOptimizableText,
+  setLifetimeText,
 }: {
+  smallRobotsText: string;
+  mediumRobotsText: string;
+  largeRobotsText: string;
+  xlargeRobotsText: string;
   energyCostText: string;
-  averageConsumptionText: string;
-  robotsText: string;
   hoursText: string;
-  optimizableText: string;
+  lifetimeText: string;
+  setSmallRobotsText: (v: string) => void;
+  setMediumRobotsText: (v: string) => void;
+  setLargeRobotsText: (v: string) => void;
+  setXlargeRobotsText: (v: string) => void;
   setEnergyCostText: (v: string) => void;
-  setAverageConsumptionText: (v: string) => void;
-  setRobotsText: (v: string) => void;
   setHoursText: (v: string) => void;
-  setOptimizableText: (v: string) => void;
+  setLifetimeText: (v: string) => void;
 }) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
   useEffect(() => {
+    const sr = searchParams.get("sr");
+    const mr = searchParams.get("mr");
+    const lr = searchParams.get("lr");
+    const xr = searchParams.get("xr");
     const ec = searchParams.get("ec");
-    const avg = searchParams.get("avg");
-    const r = searchParams.get("r");
     const h = searchParams.get("h");
-    const oz = searchParams.get("oz");
+    const lt = searchParams.get("lt");
+    if (sr !== null) setSmallRobotsText(sr);
+    if (mr !== null) setMediumRobotsText(mr);
+    if (lr !== null) setLargeRobotsText(lr);
+    if (xr !== null) setXlargeRobotsText(xr);
     if (ec !== null) setEnergyCostText(ec);
-    if (avg !== null) setAverageConsumptionText(avg);
-    if (r !== null) setRobotsText(r);
     if (h !== null) setHoursText(h);
-    if (oz !== null) setOptimizableText(oz);
+    if (lt !== null) setLifetimeText(lt);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -256,11 +310,13 @@ function UrlSync({
       if (v) nextParams.set(key, v);
       else nextParams.delete(key);
     };
+    setOrDelete("sr", smallRobotsText);
+    setOrDelete("mr", mediumRobotsText);
+    setOrDelete("lr", largeRobotsText);
+    setOrDelete("xr", xlargeRobotsText);
     setOrDelete("ec", energyCostText);
-    setOrDelete("avg", averageConsumptionText);
-    setOrDelete("r", robotsText);
     setOrDelete("h", hoursText);
-    setOrDelete("oz", optimizableText);
+    setOrDelete("lt", lifetimeText);
 
     const current = searchParams.toString();
     const next = nextParams.toString();
@@ -268,7 +324,7 @@ function UrlSync({
 
     const url = next ? `${pathname}?${next}` : pathname;
     router.replace(url, { scroll: false });
-  }, [energyCostText, averageConsumptionText, robotsText, hoursText, optimizableText, pathname, router, searchParams]);
+  }, [smallRobotsText, mediumRobotsText, largeRobotsText, xlargeRobotsText, energyCostText, hoursText, lifetimeText, pathname, router, searchParams]);
 
   return null;
 }
@@ -292,7 +348,7 @@ function Field({
 }) {
   return (
     <label className="block">
-      <span className="block text-xs uppercase tracking-wide text-black/60 dark:text-white/60 mb-1">{label}</span>
+      <span className="block text-[11px] md:text-xs font-medium text-black/70 dark:text-white/70 mb-1">{label}</span>
       <input
         type={type}
         inputMode="decimal"
@@ -301,44 +357,40 @@ function Field({
         step={step}
         min={min}
         max={max}
-        className="w-full rounded-md border border-black/15 dark:border-white/20 bg-transparent px-3 py-2 outline-none focus:ring-2 focus:ring-black/20 dark:focus:ring-white/20"
+        className="w-full rounded-lg border border-black/15 dark:border-white/15 bg-black/[.02] dark:bg-white/[.02] px-2.5 md:px-3 py-2 md:py-2.5 text-sm md:text-base outline-none transition-all focus:border-black/30 dark:focus:border-white/30 focus:bg-transparent"
       />
     </label>
-  );
-}
-
-function Row({ label, value, emphasis }: { label: string; value: string; emphasis?: boolean }) {
-  return (
-    <tr>
-      <td className="py-3 pr-4 align-top text-black/70 dark:text-white/70">{label}</td>
-      <td className={`py-3 text-right font-medium ${emphasis ? "text-green-700 dark:text-green-400" : ""}`}>{value}</td>
-    </tr>
   );
 }
 
 function ScenarioRow({
   improvement,
   energy,
-  savings,
+  co2Savings,
+  lifetimeSavings,
   highlight,
   assumed,
 }: {
   improvement: string;
   energy: string;
-  savings: string;
+  co2Savings: string;
+  lifetimeSavings: string;
   highlight?: boolean;
   assumed?: boolean;
 }) {
   return (
-    <tr className={highlight ? "bg-black/[.035] dark:bg-white/[.06]" : ""}>
-      <td className={`py-3 pr-4 ${highlight ? "font-medium" : ""}`}>
-        <span>{improvement}</span>
-        {assumed ? (
-          <span className="ml-2 inline-flex items-center rounded-sm border border-black/15 dark:border-white/20 px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-black/70 dark:text-white/70">Assumed</span>
-        ) : null}
+    <tr className={`border-b border-black/5 dark:border-white/5 transition-colors ${highlight ? "bg-green-50 dark:bg-green-950/20" : "hover:bg-black/[.02] dark:hover:bg-white/[.02]"}`}>
+      <td className={`py-3 md:py-4 pr-2 md:pr-3 ${highlight ? "font-semibold" : "font-medium"}`}>
+        <div className="flex flex-col md:flex-row md:items-center gap-1 md:gap-2">
+          <span className={`text-sm md:text-base whitespace-nowrap ${highlight ? "text-green-700 dark:text-green-400" : ""}`}>{improvement}</span>
+          {assumed ? (
+            <span className="inline-flex w-fit items-center rounded-full bg-green-100 dark:bg-green-900/30 border border-green-300 dark:border-green-700 px-1.5 md:px-2 py-0.5 text-[9px] md:text-[10px] font-semibold uppercase tracking-wide text-green-700 dark:text-green-400">Typical</span>
+          ) : null}
+        </div>
       </td>
-      <td className="py-3 pr-4">{energy}</td>
-      <td className={`py-3 text-right font-semibold ${highlight ? "text-green-700 dark:text-green-400" : ""}`}>{savings}</td>
+      <td className={`py-3 md:py-4 pr-2 md:pr-3 text-xs md:text-sm ${highlight ? "font-medium" : ""}`}>{energy}</td>
+      <td className={`py-3 md:py-4 pr-2 md:pr-3 text-xs md:text-sm ${highlight ? "font-medium" : ""}`}>{co2Savings}</td>
+      <td className={`py-3 md:py-4 text-right text-base md:text-lg font-bold tabular-nums ${highlight ? "text-green-700 dark:text-green-400" : ""}`}>{lifetimeSavings}</td>
     </tr>
   );
 }
